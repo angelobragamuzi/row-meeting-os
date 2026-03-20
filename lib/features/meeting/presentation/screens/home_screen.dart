@@ -41,10 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Excluir reuni\u00E3o?'),
-          content: const Text(
-            'Esta a\u00E7\u00E3o remove a reuni\u00E3o salva localmente.',
-          ),
+          title: const Text('Excluir reunião?'),
+          content: const Text('Esta ação remove a reunião salva localmente.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -71,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openRecording,
         icon: const Icon(Icons.mic_rounded),
-        label: const Text('Nova reuni\u00E3o'),
+        label: const Text('Nova reunião'),
       ),
       body: BlocConsumer<MeetingBloc, MeetingState>(
         listener: (context, state) {
@@ -89,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final meetings = state.meetings;
 
           if (meetings.isEmpty) {
-            return _EmptyState(onPressed: _openRecording);
+            return const _EmptyState();
           }
 
           return Column(
@@ -99,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   children: [
                     Text(
-                      'Reuni\u00F5es',
+                      'Reuniões',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -148,9 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onPressed});
-
-  final VoidCallback onPressed;
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +157,7 @@ class _EmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Nenhuma reuni\u00E3o registrada',
+              'Nenhuma reunião registrada',
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
@@ -169,17 +165,11 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Toque em "Nova reuni\u00E3o" para come\u00E7ar.',
+              'Toque em "Nova reunião" para começar.',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: const Color(0xFFA1A6B2)),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 18),
-            OutlinedButton.icon(
-              onPressed: onPressed,
-              icon: const Icon(Icons.mic_rounded),
-              label: const Text('Nova reuni\u00E3o'),
             ),
           ],
         ),

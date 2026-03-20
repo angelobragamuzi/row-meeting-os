@@ -127,7 +127,7 @@ class MeetingBloc extends Bloc<MeetingEvent, MeetingState> {
     if (current is! MeetingRecording) {
       emit(
         MeetingError(
-          message: 'Inicie e finalize uma gravacao antes de processar.',
+          message: 'Inicie e finalize uma gravação antes de processar.',
           meetings: _cachedMeetings,
         ),
       );
@@ -143,7 +143,7 @@ class MeetingBloc extends Bloc<MeetingEvent, MeetingState> {
 
       if (audioPath == null || audioPath.trim().isEmpty) {
         throw const AppException(
-          'Arquivo de audio invalido para processamento.',
+          'Arquivo de áudio inválido para processamento.',
         );
       }
 

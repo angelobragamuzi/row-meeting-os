@@ -157,8 +157,43 @@ class _RecordingScreenState extends State<RecordingScreen>
                                   const MeetingFinalized(),
                                 );
                                 Navigator.of(context).pushReplacement(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const ProcessingScreen(),
+                                  PageRouteBuilder<void>(
+                                    transitionDuration: const Duration(
+                                      milliseconds: 420,
+                                    ),
+                                    reverseTransitionDuration: const Duration(
+                                      milliseconds: 260,
+                                    ),
+                                    pageBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                        ) => const ProcessingScreen(),
+                                    transitionsBuilder:
+                                        (
+                                          context,
+                                          animation,
+                                          secondaryAnimation,
+                                          child,
+                                        ) {
+                                          final curved = CurvedAnimation(
+                                            parent: animation,
+                                            curve: Curves.easeOutCubic,
+                                          );
+                                          final offset = Tween<Offset>(
+                                            begin: const Offset(0, 0.03),
+                                            end: Offset.zero,
+                                          ).animate(curved);
+
+                                          return FadeTransition(
+                                            opacity: curved,
+                                            child: SlideTransition(
+                                              position: offset,
+                                              child: child,
+                                            ),
+                                          );
+                                        },
                                   ),
                                 );
                               }

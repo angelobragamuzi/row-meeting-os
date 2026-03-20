@@ -42,7 +42,7 @@ class MeetingCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     meeting.context.isEmpty
-                        ? 'Descri\u00E7\u00E3o indispon\u00EDvel para esta reuni\u00E3o.'
+                        ? 'Resumo indisponível para esta reunião.'
                         : meeting.context,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -56,7 +56,7 @@ class MeetingCard extends StatelessWidget {
             ),
             PopupMenuButton<_MeetingMenuAction>(
               icon: const Icon(Icons.more_horiz_rounded),
-              tooltip: 'A\u00E7\u00F5es da reuni\u00E3o',
+              tooltip: 'Ações da reunião',
               onSelected: (value) {
                 if (value == _MeetingMenuAction.delete) {
                   onDelete();
@@ -65,7 +65,7 @@ class MeetingCard extends StatelessWidget {
               itemBuilder: (context) => const [
                 PopupMenuItem<_MeetingMenuAction>(
                   value: _MeetingMenuAction.delete,
-                  child: Text('Excluir reuni\u00E3o'),
+                  child: Text('Excluir reunião'),
                 ),
               ],
             ),
