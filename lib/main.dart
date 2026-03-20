@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/di/app_dependencies.dart';
 import 'core/theme/app_theme.dart';
+import 'features/meeting/domain/usecases/export_summary_assistant_image.dart';
 import 'features/meeting/domain/usecases/export_summary_assistant_pdf.dart';
 import 'features/meeting/domain/usecases/generate_summary_assistant_content.dart';
 import 'features/meeting/domain/usecases/update_meeting_summary.dart';
@@ -79,6 +80,9 @@ class _RowAppState extends State<RowApp> {
       providers: [
         RepositoryProvider<GenerateSummaryAssistantContent>.value(
           value: widget.dependencies.generateSummaryAssistantContent,
+        ),
+        RepositoryProvider<ExportSummaryAssistantImage>.value(
+          value: widget.dependencies.exportSummaryAssistantImage,
         ),
         RepositoryProvider<ExportSummaryAssistantPdf>.value(
           value: widget.dependencies.exportSummaryAssistantPdf,

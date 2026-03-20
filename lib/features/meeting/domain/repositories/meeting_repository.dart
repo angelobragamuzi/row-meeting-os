@@ -1,4 +1,5 @@
 import '../entities/meeting.dart';
+import '../entities/image_export_result.dart';
 import '../entities/pdf_export_result.dart';
 import '../entities/summary_assistant_type.dart';
 
@@ -19,6 +20,12 @@ abstract class MeetingRepository {
   });
 
   Future<PdfExportResult> exportSummaryAssistantPdf({
+    required String discussionTopics,
+    required String actionTasks,
+    required String keyObservations,
+  });
+
+  Future<ImageExportResult> exportSummaryAssistantImage({
     required String discussionTopics,
     required String actionTasks,
     required String keyObservations,

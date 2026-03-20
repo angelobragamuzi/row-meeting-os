@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../domain/entities/meeting.dart';
 import '../../domain/entities/summary_assistant_type.dart';
+import '../../domain/usecases/export_summary_assistant_image.dart';
 import '../../domain/usecases/export_summary_assistant_pdf.dart';
 import '../../domain/usecases/generate_summary_assistant_content.dart';
 import '../../domain/usecases/update_meeting_summary.dart';
@@ -121,6 +122,7 @@ class _ResultScreenState extends State<ResultScreen> {
     required String summary,
   }) async {
     final generateUseCase = context.read<GenerateSummaryAssistantContent>();
+    final exportImageUseCase = context.read<ExportSummaryAssistantImage>();
     final exportPdfUseCase = context.read<ExportSummaryAssistantPdf>();
 
     final generatedCache = await Navigator.of(context)
@@ -132,6 +134,7 @@ class _ResultScreenState extends State<ResultScreen> {
               return BlocProvider<SummaryAssistantCubit>(
                 create: (_) => SummaryAssistantCubit(
                   generateSummaryAssistantContent: generateUseCase,
+                  exportSummaryAssistantImage: exportImageUseCase,
                   exportSummaryAssistantPdf: exportPdfUseCase,
                   summary: summary,
                   type: type,
@@ -440,8 +443,9 @@ class _AssistantActionsPanel extends StatelessWidget {
           _ActionButton(
             onTap: onFullPack,
             icon: Icons.picture_as_pdf_outlined,
-            title: 'Gerar tudo + exportar PDF',
-            subtitle: 'Produz tópicos, tarefas e observações em um fluxo só.',
+            title: 'Gerar tudo + exportar/compartilhar',
+            subtitle:
+                'Produz tópicos, tarefas e observações e permite PDF/imagem.',
           ),
         ],
       ),

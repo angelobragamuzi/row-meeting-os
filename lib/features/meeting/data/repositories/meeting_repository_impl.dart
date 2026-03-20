@@ -1,6 +1,8 @@
 import '../../domain/entities/meeting.dart';
+import '../../domain/entities/image_export_result.dart';
 import '../../domain/entities/pdf_export_result.dart';
 import '../../domain/entities/summary_assistant_type.dart';
+import '../../domain/services/image_export_service.dart';
 import '../../domain/repositories/meeting_repository.dart';
 import '../../domain/services/pdf_export_service.dart';
 import '../../domain/services/summary_service.dart';
@@ -16,17 +18,20 @@ class MeetingRepositoryImpl implements MeetingRepository {
     required TranscriptionService transcriptionService,
     required SummaryService summaryService,
     required PdfExportService pdfExportService,
+    required ImageExportService imageExportService,
   }) : _audioRecorderDataSource = audioRecorderDataSource,
        _localMeetingDataSource = localMeetingDataSource,
        _transcriptionService = transcriptionService,
        _summaryService = summaryService,
-       _pdfExportService = pdfExportService;
+       _pdfExportService = pdfExportService,
+       _imageExportService = imageExportService;
 
   final AudioRecorderDataSource _audioRecorderDataSource;
   final LocalMeetingDataSource _localMeetingDataSource;
   final TranscriptionService _transcriptionService;
   final SummaryService _summaryService;
   final PdfExportService _pdfExportService;
+  final ImageExportService _imageExportService;
 
   @override
   Future<List<Meeting>> getMeetings() => _localMeetingDataSource.getMeetings();
@@ -62,6 +67,19 @@ class MeetingRepositoryImpl implements MeetingRepository {
     required String keyObservations,
   }) {
     return _pdfExportService.exportSummaryAssistantPdf(
+      discussionTopics: discussionTopics,
+      actionTasks: actionTasks,
+      keyObservations: keyObservations,
+    );
+  }
+
+  @override
+  Future<ImageExportResult> exportSummaryAssistantImage({
+    required String discussionTopics,
+    required String actionTasks,
+    required String keyObservations,
+  }) {
+    return _imageExportService.exportSummaryAssistantImage(
       discussionTopics: discussionTopics,
       actionTasks: actionTasks,
       keyObservations: keyObservations,

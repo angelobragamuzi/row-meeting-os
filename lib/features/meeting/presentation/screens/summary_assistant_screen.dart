@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../domain/entities/summary_assistant_type.dart';
 import '../bloc/summary_assistant_cubit.dart';
@@ -109,12 +110,14 @@ class SummaryAssistantScreen extends StatelessWidget {
                       state.status == SummaryAssistantStatus.success)
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
-                      child: ElevatedButton.icon(
-                        onPressed: state.hasFullPack
-                            ? () => _exportFullPackPdf(context)
-                            : null,
-                        icon: const Icon(Icons.picture_as_pdf_outlined),
-                        label: const Text('Exportar PDF'),
+                      child: _FullPackActions(
+                        enabled: state.hasFullPack,
+                        onExportPdf: () => _exportFullPackPdf(context),
+                        onExportImage: () => _exportFullPackImage(context),
+                        onSharePdf: () => _shareFullPackPdf(context),
+                        onShareImage: () => _shareFullPackImage(context),
+                        onSharePdfAndImage: () =>
+                            _shareFullPackPdfAndImage(context),
                       ),
                     ),
                 ],
@@ -218,6 +221,181 @@ class SummaryAssistantScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _exportFullPackImage(BuildContext context) async {
+    final cubit = context.read<SummaryAssistantCubit>();
+
+    try {
+      final result = await cubit.exportFullPackImage();
+
+      if (!context.mounted) {
+        return;
+      }
+
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+
+      if (result.hasLocalPath) {
+        messenger.showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 6),
+            content: Text(
+              'Imagem exportada com sucesso.\nSalva em:\n${result.localPath}',
+            ),
+          ),
+        );
+        return;
+      }
+
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Imagem exportada com sucesso.')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Falha ao exportar imagem: $error')),
+        );
+    }
+  }
+
+  Future<void> _shareFullPackPdf(BuildContext context) async {
+    final cubit = context.read<SummaryAssistantCubit>();
+
+    try {
+      final result = await cubit.exportFullPackPdf();
+      final localPath = _requiredPath(
+        path: result.localPath,
+        fileTypeLabel: 'PDF',
+      );
+
+      await _shareFiles(
+        filePaths: [localPath],
+        text: 'Ações da reunião (PDF).',
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('PDF compartilhado com sucesso.')),
+        );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Falha ao compartilhar PDF: $error')),
+        );
+    }
+  }
+
+  Future<void> _shareFullPackImage(BuildContext context) async {
+    final cubit = context.read<SummaryAssistantCubit>();
+
+    try {
+      final result = await cubit.exportFullPackImage();
+      final localPath = _requiredPath(
+        path: result.localPath,
+        fileTypeLabel: 'imagem',
+      );
+
+      await _shareFiles(
+        filePaths: [localPath],
+        text: 'Ações da reunião (imagem).',
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Imagem compartilhada com sucesso.')),
+        );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Falha ao compartilhar imagem: $error')),
+        );
+    }
+  }
+
+  Future<void> _shareFullPackPdfAndImage(BuildContext context) async {
+    final cubit = context.read<SummaryAssistantCubit>();
+
+    try {
+      final pdfResult = await cubit.exportFullPackPdf();
+      final imageResult = await cubit.exportFullPackImage();
+
+      final pdfPath = _requiredPath(
+        path: pdfResult.localPath,
+        fileTypeLabel: 'PDF',
+      );
+      final imagePath = _requiredPath(
+        path: imageResult.localPath,
+        fileTypeLabel: 'imagem',
+      );
+
+      await _shareFiles(
+        filePaths: [pdfPath, imagePath],
+        text: 'Ações da reunião em PDF e imagem.',
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('PDF e imagem compartilhados com sucesso.'),
+          ),
+        );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Falha ao compartilhar PDF e imagem: $error')),
+        );
+    }
+  }
+
+  Future<void> _shareFiles({
+    required List<String> filePaths,
+    required String text,
+  }) {
+    return SharePlus.instance.share(
+      ShareParams(
+        files: filePaths.map((path) => XFile(path)).toList(),
+        text: text,
+      ),
+    );
+  }
+
+  String _requiredPath({required String? path, required String fileTypeLabel}) {
+    final normalized = path?.trim() ?? '';
+    if (normalized.isEmpty) {
+      throw Exception(
+        'Não foi possível localizar o arquivo $fileTypeLabel para compartilhar.',
+      );
+    }
+    return normalized;
+  }
+
   String _titleFor(SummaryAssistantType type) {
     switch (type) {
       case SummaryAssistantType.discussionTopics:
@@ -242,6 +420,77 @@ class SummaryAssistantScreen extends StatelessWidget {
       case SummaryAssistantType.fullPack:
         return 'Geração completa com tópicos, tarefas e observações.';
     }
+  }
+}
+
+class _FullPackActions extends StatelessWidget {
+  const _FullPackActions({
+    required this.enabled,
+    required this.onExportPdf,
+    required this.onExportImage,
+    required this.onSharePdf,
+    required this.onShareImage,
+    required this.onSharePdfAndImage,
+  });
+
+  final bool enabled;
+  final VoidCallback onExportPdf;
+  final VoidCallback onExportImage;
+  final VoidCallback onSharePdf;
+  final VoidCallback onShareImage;
+  final VoidCallback onSharePdfAndImage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: enabled ? onExportPdf : null,
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+                label: const Text('Exportar PDF'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: enabled ? onExportImage : null,
+                icon: const Icon(Icons.image_outlined),
+                label: const Text('Exportar imagem'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: enabled ? onSharePdf : null,
+                icon: const Icon(Icons.share_outlined),
+                label: const Text('Compartilhar PDF'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: enabled ? onShareImage : null,
+                icon: const Icon(Icons.share_outlined),
+                label: const Text('Compartilhar imagem'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: enabled ? onSharePdfAndImage : null,
+          icon: const Icon(Icons.ios_share_outlined),
+          label: const Text('Compartilhar PDF + imagem'),
+        ),
+      ],
+    );
   }
 }
 

@@ -41,12 +41,18 @@ class PdfExportServiceImpl implements PdfExportService {
     required Uint8List bytes,
   }) async {
     final targetDir = await _resolvePreferredDirectory();
+    await targetDir.create(recursive: true);
     final file = File('${targetDir.path}/$fileName');
     await file.writeAsBytes(bytes, flush: true);
     return file.path;
   }
 
   Future<Directory> _resolvePreferredDirectory() async {
+    final downloadsDir = await _resolveDownloadsDirectory();
+    if (downloadsDir != null) {
+      return downloadsDir;
+    }
+
     if (Platform.isAndroid) {
       final externalDir = await getExternalStorageDirectory();
       if (externalDir != null) {
@@ -55,6 +61,28 @@ class PdfExportServiceImpl implements PdfExportService {
     }
 
     return getApplicationDocumentsDirectory();
+  }
+
+  Future<Directory?> _resolveDownloadsDirectory() async {
+    try {
+      final downloadsDir = await getDownloadsDirectory();
+      if (downloadsDir != null) {
+        return downloadsDir;
+      }
+    } on UnsupportedError {
+      // Plataforma sem diretório de downloads exposto via path_provider.
+    }
+
+    if (Platform.isAndroid) {
+      final androidDownloadsDirs = await getExternalStorageDirectories(
+        type: StorageDirectory.downloads,
+      );
+      if (androidDownloadsDirs != null && androidDownloadsDirs.isNotEmpty) {
+        return androidDownloadsDirs.first;
+      }
+    }
+
+    return null;
   }
 
   Future<Uint8List> _buildFullPackPdf({

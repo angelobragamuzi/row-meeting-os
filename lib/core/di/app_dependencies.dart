@@ -8,9 +8,11 @@ import '../../features/meeting/data/datasources/local_meeting_data_source.dart';
 import '../../features/meeting/data/repositories/meeting_repository_impl.dart';
 import '../../features/meeting/data/services/gemini_service.dart';
 import '../../features/meeting/data/services/gemini_transcription_service.dart';
+import '../../features/meeting/data/services/image_export_service_impl.dart';
 import '../../features/meeting/data/services/pdf_export_service_impl.dart';
 import '../../features/meeting/domain/repositories/meeting_repository.dart';
 import '../../features/meeting/domain/usecases/delete_meeting.dart';
+import '../../features/meeting/domain/usecases/export_summary_assistant_image.dart';
 import '../../features/meeting/domain/usecases/export_summary_assistant_pdf.dart';
 import '../../features/meeting/domain/usecases/generate_summary_assistant_content.dart';
 import '../../features/meeting/domain/usecases/get_meetings.dart';
@@ -27,6 +29,7 @@ class AppDependencies {
     required this.meetingRepository,
     required this.meetingBloc,
     required this.generateSummaryAssistantContent,
+    required this.exportSummaryAssistantImage,
     required this.exportSummaryAssistantPdf,
     required this.updateMeetingSummary,
     required http.Client httpClient,
@@ -35,6 +38,7 @@ class AppDependencies {
   final MeetingRepository meetingRepository;
   final MeetingBloc meetingBloc;
   final GenerateSummaryAssistantContent generateSummaryAssistantContent;
+  final ExportSummaryAssistantImage exportSummaryAssistantImage;
   final ExportSummaryAssistantPdf exportSummaryAssistantPdf;
   final UpdateMeetingSummary updateMeetingSummary;
   final http.Client _httpClient;
@@ -70,6 +74,7 @@ class AppDependencies {
         model: geminiModel,
       ),
       pdfExportService: const PdfExportServiceImpl(),
+      imageExportService: const ImageExportServiceImpl(),
     );
 
     final meetingBloc = MeetingBloc(
@@ -86,6 +91,10 @@ class AppDependencies {
       meetingRepository,
     );
 
+    final exportSummaryAssistantImage = ExportSummaryAssistantImage(
+      meetingRepository,
+    );
+
     final exportSummaryAssistantPdf = ExportSummaryAssistantPdf(
       meetingRepository,
     );
@@ -96,6 +105,7 @@ class AppDependencies {
       meetingRepository: meetingRepository,
       meetingBloc: meetingBloc,
       generateSummaryAssistantContent: generateSummaryAssistantContent,
+      exportSummaryAssistantImage: exportSummaryAssistantImage,
       exportSummaryAssistantPdf: exportSummaryAssistantPdf,
       updateMeetingSummary: updateMeetingSummary,
       httpClient: httpClient,

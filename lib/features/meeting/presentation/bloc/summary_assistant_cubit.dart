@@ -1,8 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../domain/entities/image_export_result.dart';
 import '../../domain/entities/pdf_export_result.dart';
 import '../../domain/entities/summary_assistant_type.dart';
+import '../../domain/usecases/export_summary_assistant_image.dart';
 import '../../domain/usecases/export_summary_assistant_pdf.dart';
 import '../../domain/usecases/generate_summary_assistant_content.dart';
 import 'summary_assistant_state.dart';
@@ -10,6 +12,7 @@ import 'summary_assistant_state.dart';
 class SummaryAssistantCubit extends Cubit<SummaryAssistantState> {
   SummaryAssistantCubit({
     required GenerateSummaryAssistantContent generateSummaryAssistantContent,
+    required ExportSummaryAssistantImage exportSummaryAssistantImage,
     required ExportSummaryAssistantPdf exportSummaryAssistantPdf,
     required this.summary,
     required this.type,
@@ -17,10 +20,12 @@ class SummaryAssistantCubit extends Cubit<SummaryAssistantState> {
     this.cachedActionTasks = '',
     this.cachedKeyObservations = '',
   }) : _generateSummaryAssistantContent = generateSummaryAssistantContent,
+       _exportSummaryAssistantImage = exportSummaryAssistantImage,
        _exportSummaryAssistantPdf = exportSummaryAssistantPdf,
        super(const SummaryAssistantState());
 
   final GenerateSummaryAssistantContent _generateSummaryAssistantContent;
+  final ExportSummaryAssistantImage _exportSummaryAssistantImage;
   final ExportSummaryAssistantPdf _exportSummaryAssistantPdf;
   final String summary;
   final SummaryAssistantType type;
@@ -71,6 +76,18 @@ class SummaryAssistantCubit extends Cubit<SummaryAssistantState> {
     }
 
     return _exportSummaryAssistantPdf(
+      discussionTopics: state.discussionTopics.trim(),
+      actionTasks: state.actionTasks.trim(),
+      keyObservations: state.keyObservations.trim(),
+    );
+  }
+
+  Future<ImageExportResult> exportFullPackImage() async {
+    if (!state.hasFullPack) {
+      throw const AppException('Não há conteúdo para exportar no momento.');
+    }
+
+    return _exportSummaryAssistantImage(
       discussionTopics: state.discussionTopics.trim(),
       actionTasks: state.actionTasks.trim(),
       keyObservations: state.keyObservations.trim(),
