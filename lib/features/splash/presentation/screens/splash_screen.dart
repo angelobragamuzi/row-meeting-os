@@ -53,49 +53,15 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0B0C0E), Color(0xFF060709)],
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return _AnagramSequence(t: _controller.value);
+            },
           ),
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _GridPainter(lineColor: const Color(0x13262B36)),
-              ),
-            ),
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  final glow = Curves.easeInOut.transform(_controller.value);
-                  return DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: const Alignment(0, -0.14),
-                        radius: 0.86 + (0.08 * glow),
-                        colors: const [Color(0x14FFFFFF), Color(0x00000000)],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            SafeArea(
-              child: Center(
-                child: AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, child) {
-                    return _AnagramSequence(t: _controller.value);
-                  },
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -217,30 +183,4 @@ double _segment(double t, double begin, double end, Curve curve) {
   }
   final normalized = (t - begin) / (end - begin);
   return curve.transform(normalized);
-}
-
-class _GridPainter extends CustomPainter {
-  const _GridPainter({required this.lineColor});
-
-  final Color lineColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = lineColor
-      ..strokeWidth = 1;
-
-    const spacing = 42.0;
-    for (double x = 0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _GridPainter oldDelegate) {
-    return oldDelegate.lineColor != lineColor;
-  }
 }
