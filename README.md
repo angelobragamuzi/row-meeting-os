@@ -1,38 +1,74 @@
 # ROW
 
-ROW significa **Record, Organize, Work** e e um aplicativo Flutter para gravar reunioes e gerar resumos estruturados em tempo real de forma local (sem backend proprio).
+ROW (**Record, Organize, Work**) é uma aplicação Flutter para registro e pós-processamento de reuniões com suporte a IA generativa (Gemini). O projeto foi desenhado para funcionar sem backend proprietário, com armazenamento local e foco em transformar conversa em ação.
 
-## Funcionalidades
+## Visão Geral
 
-- Gravar audio de reunioes com `record`
-- Salvar dados localmente com `Hive`
-- Transcrever audio real com Gemini a partir do arquivo gravado
-- Analisar transcricao com Gemini (quando `GEMINI_API_KEY` estiver configurada)
-- Exibir resumo estruturado com:
-  - descricao
-  - topicos
-  - decisoes
-  - tarefas
+O aplicativo cobre o ciclo completo de uma reunião:
+
+1. gravação de áudio;
+2. transcrição automática;
+3. síntese do conteúdo;
+4. geração de desdobramentos práticos;
+5. persistência local e exportação em PDF.
+
+## Funcionalidades Principais
+
+- Gravação de áudio com `record`.
+- Transcrição automática via `GeminiTranscriptionService`.
+- Geração de resumo executivo via `GeminiService`.
+- Geração assistida de conteúdo complementar:
+  - tópicos de discussão;
+  - tarefas sugeridas;
+  - observações importantes;
+  - pacote completo consolidado.
+- Persistência local de reuniões e resumos com `Hive`.
+- Atualização de resumo persistido após interações do assistente.
+- Exportação de PDF local com `pdf`.
 
 ## Arquitetura
 
-O projeto segue **Clean Architecture** + **BLoC**, com separacao por feature:
+A solução segue **Clean Architecture** com organização **feature-first** e gerenciamento de estado com **BLoC**.
 
-- `lib/core`
-  - temas, erros e injecao de dependencias
-- `lib/features/meeting/domain`
-  - entidades
-  - contratos de repositorio/servicos
-  - use cases
-- `lib/features/meeting/data`
-  - datasources (gravacao e storage local)
-  - servicos (transcricao e resumo com Gemini)
-  - implementacao de repositorio
-- `lib/features/meeting/presentation`
-  - BLoC (eventos/estados)
-  - telas e widgets
+### Camadas
 
-## Estrutura de pastas
+- **Domain**: entidades, contratos e casos de uso.
+- **Data**: datasources, serviços externos e implementação de repositórios.
+- **Presentation**: telas, widgets, cubits/blocs e estados.
+- **Core**: DI, tema e tratamento de erros compartilhados.
+
+### Mapeamento de Responsabilidades
+
+- `GeminiTranscriptionService`: transcrição do áudio para texto.
+- `GeminiService`: sumarização e geração de conteúdo adicional a partir do resumo.
+- `MeetingRepositoryImpl`: orquestração entre gravação, IA, persistência e exportação.
+- `LocalMeetingDataSource`: leitura/escrita local com Hive.
+- `SummaryAssistantCubit`: fluxo de geração de conteúdo complementar e exportação.
+- `PdfExportServiceImpl`: montagem e escrita de PDF no dispositivo.
+
+## Fluxo Funcional (Ponta a Ponta)
+
+1. Usuário inicia uma nova reunião.
+2. Inicia e finaliza a gravação.
+3. O app transcreve o áudio com Gemini.
+4. O app gera um resumo executivo em português.
+5. A reunião é persistida localmente.
+6. A tela de resultado permite abrir o assistente de resumo.
+7. O assistente gera conteúdo acionável e pode exportar PDF.
+
+## Stack Tecnológica
+
+- **Flutter / Dart**
+- **flutter_bloc** (estado e fluxo de UI)
+- **equatable** (comparação de objetos de estado)
+- **record** (captura de áudio)
+- **http** (integração com Gemini API)
+- **hive** (persistência local)
+- **path_provider** (resolução de diretórios)
+- **pdf** (geração de documento)
+- **flutter_dotenv** (configuração de ambiente)
+
+## Estrutura de Pastas
 
 ```txt
 lib/
@@ -43,74 +79,64 @@ lib/
   features/
     meeting/
       data/
+        datasources/
+        models/
+        repositories/
+        services/
       domain/
+        entities/
+        repositories/
+        services/
+        usecases/
       presentation/
+        bloc/
+        screens/
+        widgets/
+    splash/
+      presentation/
+        screens/
 ```
 
-## Fluxo do app
+## Configuração de Ambiente
 
-1. Usuario inicia uma nova reuniao
-2. Inicia/parar gravacao
-3. Clica em finalizar
-4. Tela de processamento exibe:
-   - Transcrevendo...
-   - Analisando...
-5. Reuniao e resumo sao salvos localmente
-6. Tela de resultado mostra descricao/topicos/decisoes/tarefas
-
-## BLoC e estados
-
-`MeetingBloc` usa os estados principais:
-
-- `initial`
-- `recording`
-- `processing`
-- `loaded`
-- `error`
-
-## Dependencias principais
-
-- `flutter_bloc`
-- `equatable`
-- `record`
-- `http`
-- `hive`
-- `path_provider`
-- `intl`
-- `flutter_dotenv`
-
-## Como rodar
-
-1. Instale dependencias:
-
-```bash
-flutter pub get
-```
-
-2. Configure variaveis de ambiente:
+1. Crie o arquivo de ambiente:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Abra o arquivo `.env` e preencha:
+2. Configure as variáveis:
 
 ```env
 GEMINI_API_KEY=SUA_CHAVE_AQUI
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
-4. Rode o app:
+### Observações de Segurança
+
+- Não versione segredos em `.env`.
+- Em produção, o ideal é intermediar chamadas a LLM por backend seguro.
+
+## Como Executar
 
 ```bash
+flutter pub get
 flutter run
 ```
 
-## Observacoes
+## Resiliência e Tratamento de Erros
 
-- O app funciona sem backend proprio.
-- Sem `GEMINI_API_KEY` no `.env`, o app mostra erro de configuracao ao processar.
-- Em caso de `HTTP 429` (limite/quota Gemini), o app mostra erro explicito para evitar salvar resultados artificiais.
-- Ainda existe fallback para `--dart-define=GEMINI_API_KEY=...` por compatibilidade.
-- O modelo pode ser trocado por `.env` com `GEMINI_MODEL=...` (padrao: `gemini-2.5-flash`).
-- Dados de reuniao ficam persistidos localmente em Hive.
+- Validação de entrada para áudio e transcrição vazios.
+- Timeout explícito para chamadas de transcrição e sumarização.
+- Retentativa com backoff para `HTTP 429` (quota/rate limit).
+- Mensagens de erro orientadas ao usuário final.
+
+## Persistência e Exportação
+
+- Reuniões e resumos ficam armazenados localmente em Hive.
+- O PDF do pacote completo é gerado no dispositivo.
+- No Android, a exportação prioriza diretório externo quando disponível.
+
+## Status
+
+Projeto em evolução contínua, com foco em qualidade de UX, clareza do fluxo de reunião e arquitetura escalável para novas funcionalidades.
