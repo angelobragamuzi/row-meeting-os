@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
@@ -18,18 +17,19 @@ class AudioRecorderDataSource {
       throw const AppException('Permissao de microfone negada.');
     }
 
-    final docsDir = await getApplicationDocumentsDirectory();
-    final recordsDir = Directory('${docsDir.path}/recordings');
-    await recordsDir.create(recursive: true);
-
-    _recordingPath =
-        '${recordsDir.path}/meeting_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    if (kIsWeb) {
+      _recordingPath = 'meeting_${DateTime.now().millisecondsSinceEpoch}.webm';
+    } else {
+      final docsDir = await getApplicationDocumentsDirectory();
+      _recordingPath =
+          '${docsDir.path}/meeting_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    }
 
     await _audioRecorder.start(
-      const RecordConfig(
-        encoder: AudioEncoder.aacLc,
-        bitRate: 128000,
-        sampleRate: 44100,
+      RecordConfig(
+        encoder: kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc,
+        bitRate: kIsWeb ? 64000 : 128000,
+        sampleRate: kIsWeb ? 48000 : 44100,
       ),
       path: _recordingPath!,
     );

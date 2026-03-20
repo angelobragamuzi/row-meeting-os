@@ -35,3 +35,12 @@ class MeetingFinalized extends MeetingEvent {
 class MeetingSelectionCleared extends MeetingEvent {
   const MeetingSelectionCleared();
 }
+
+class MeetingDeleted extends MeetingEvent {
+  const MeetingDeleted(this.meetingId);
+
+  final String meetingId;
+
+  @override
+  List<Object?> get props => [meetingId];
+}

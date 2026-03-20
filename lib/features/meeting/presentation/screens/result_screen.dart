@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/entities/meeting.dart';
+import '../bloc/meeting_bloc.dart';
+import '../bloc/meeting_event.dart';
 
 class ResultScreen extends StatelessWidget {
   const ResultScreen({super.key, required this.meeting});
@@ -23,7 +26,16 @@ class ResultScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ROW / RESULTADO')),
+      appBar: AppBar(
+        title: const Text('ROW / RESULTADO'),
+        actions: [
+          IconButton(
+            onPressed: () => _confirmDelete(context),
+            icon: const Icon(Icons.delete_outline_rounded),
+            tooltip: 'Excluir reunião',
+          ),
+        ],
+      ),
       body: Container(
         color: const Color(0xFF0A0A0A),
         child: ListView(
@@ -73,6 +85,33 @@ class ResultScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Excluir reunião?'),
+          content: const Text('Esta ação remove a reunião salva localmente.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true && context.mounted) {
+      context.read<MeetingBloc>().add(MeetingDeleted(meeting.id));
+      Navigator.of(context).pop();
+    }
   }
 
   List<String> _asStringList(dynamic raw) {

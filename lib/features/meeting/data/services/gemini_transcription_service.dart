@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/error/app_exception.dart';
@@ -21,8 +22,7 @@ class GeminiTranscriptionService implements TranscriptionService {
 
   @override
   Future<String> transcribe(String filePath) async {
-    final file = File(filePath);
-    if (!await file.exists()) {
+    if (!await _audioSourceExists(filePath)) {
       throw const AppException(
         'Arquivo de audio nao encontrado para transcricao.',
       );
@@ -35,7 +35,7 @@ class GeminiTranscriptionService implements TranscriptionService {
     }
 
     try {
-      final audioBytes = await file.readAsBytes();
+      final audioBytes = await _readAudioBytes(filePath);
       if (audioBytes.isEmpty) {
         throw const AppException(
           'Audio vazio. Grave novamente e tente outra vez.',
@@ -100,6 +100,10 @@ class GeminiTranscriptionService implements TranscriptionService {
       throw const AppException(
         'Tempo limite excedido ao transcrever audio no Gemini.',
       );
+    } on http.ClientException {
+      throw const AppException(
+        'Falha de rede ao transcrever audio. Verifique a conexao.',
+      );
     } on SocketException {
       throw const AppException(
         'Falha de rede ao transcrever audio. Verifique a conexao.',
@@ -107,6 +111,48 @@ class GeminiTranscriptionService implements TranscriptionService {
     } catch (error) {
       throw AppException('Falha ao transcrever audio: $error');
     }
+  }
+
+  Future<bool> _audioSourceExists(String filePath) async {
+    if (kIsWeb) {
+      final uri = Uri.tryParse(filePath);
+      if (uri == null) {
+        return false;
+      }
+
+      try {
+        final response = await _client.get(uri);
+        return response.statusCode >= 200 && response.statusCode < 300;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    final file = File(filePath);
+    return file.exists();
+  }
+
+  Future<List<int>> _readAudioBytes(String filePath) async {
+    if (kIsWeb) {
+      final uri = Uri.tryParse(filePath);
+      if (uri == null) {
+        throw const AppException(
+          'Endereco de audio invalido para transcricao no navegador.',
+        );
+      }
+
+      final response = await _client.get(uri);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw const AppException(
+          'Nao foi possivel acessar o audio gravado no navegador.',
+        );
+      }
+
+      return response.bodyBytes;
+    }
+
+    final file = File(filePath);
+    return file.readAsBytes();
   }
 
   Future<http.Response> _postWithRetry({
@@ -219,6 +265,9 @@ class GeminiTranscriptionService implements TranscriptionService {
 
   String _guessMimeType(String path) {
     final lower = path.toLowerCase();
+    if (lower.startsWith('blob:') || lower.endsWith('.webm')) {
+      return 'audio/webm';
+    }
     if (lower.endsWith('.m4a') || lower.endsWith('.mp4')) {
       return 'audio/mp4';
     }

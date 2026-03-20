@@ -17,5 +17,7 @@ abstract class MeetingRepository {
     required Map<String, dynamic> summary,
   });
 
+  Future<void> deleteMeeting(String meetingId);
+
   Future<void> dispose();
 }

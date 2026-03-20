@@ -6,19 +6,63 @@ import '../bloc/meeting_event.dart';
 import '../bloc/meeting_state.dart';
 import 'processing_screen.dart';
 
-class RecordingScreen extends StatelessWidget {
+class RecordingScreen extends StatefulWidget {
   const RecordingScreen({super.key});
+
+  @override
+  State<RecordingScreen> createState() => _RecordingScreenState();
+}
+
+class _RecordingScreenState extends State<RecordingScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  void _syncPulse(bool isRecording) {
+    if (isRecording) {
+      if (!_pulseController.isAnimating) {
+        _pulseController.repeat();
+      }
+      return;
+    }
+
+    if (_pulseController.isAnimating) {
+      _pulseController.stop();
+    }
+    if (_pulseController.value != 0) {
+      _pulseController.value = 0;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ROW / GRAVAR')),
+      appBar: AppBar(),
       body: Container(
         color: const Color(0xFF0A0A0A),
         child: SafeArea(
           child: BlocConsumer<MeetingBloc, MeetingState>(
             listener: (context, state) {
+              if (state is MeetingRecording) {
+                _syncPulse(state.isRecording);
+              }
+
               if (state is MeetingError) {
+                _syncPulse(false);
                 ScaffoldMessenger.of(context)
                   ..hideCurrentSnackBar()
                   ..showSnackBar(SnackBar(content: Text(state.message)));
@@ -40,82 +84,70 @@ class RecordingScreen extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
-                  vertical: 20,
+                  vertical: 10,
                 ),
                 child: Column(
                   children: [
-                    const Spacer(),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF141414),
-                        border: Border.fromBorderSide(
-                          BorderSide(color: Color(0xFF2B2B2B), width: 2),
-                        ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Gravação da reunião',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            isRecording ? 'REC ON' : 'REC OFF',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  letterSpacing: 1.2,
-                                  color: isRecording
-                                      ? const Color(0xFFF2F2F2)
-                                      : const Color(0xFF9A9A9A),
-                                ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Divider(
-                            height: 1,
-                            thickness: 1,
-                            color: Color(0xFF2B2B2B),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            _formatDuration(recordingState.elapsed),
-                            style: Theme.of(context).textTheme.displaySmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      isRecording
-                          ? 'Gravando em tempo real'
-                          : 'Pronto para gravar',
-                      style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'RECORD  ORGANIZE  WORK',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: const Color(0xFF9A9A9A),
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    const Spacer(),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          context.read<MeetingBloc>().add(
-                            isRecording
-                                ? const RecordingStopped()
-                                : const RecordingStarted(),
-                          );
-                        },
-                        icon: Icon(isRecording ? Icons.stop : Icons.mic),
-                        label: Text(
-                          isRecording ? 'PARAR GRAVACAO' : 'INICIAR GRAVACAO',
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Toque no microfone para iniciar ou parar.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFFBEBEBE),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const Spacer(),
+                    Text(
+                      _formatDuration(recordingState.elapsed),
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    _MicPulseOrb(
+                      isRecording: isRecording,
+                      pulse: _pulseController,
+                      onTap: () {
+                        context.read<MeetingBloc>().add(
+                          isRecording
+                              ? const RecordingStopped()
+                              : const RecordingStarted(),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 26),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: Text(
+                        isRecording
+                            ? 'Gravando em tempo real...'
+                            : canFinalize
+                            ? 'Áudio pronto para processamento.'
+                            : 'Aguardando início da gravação.',
+                        key: ValueKey<String>(
+                          '$isRecording-${recordingState.audioPath}',
+                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: isRecording
+                                  ? const Color(0xFFF2F2F2)
+                                  : const Color(0xFFB3B3B3),
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const Spacer(),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
@@ -155,5 +187,108 @@ class RecordingScreen extends StatelessWidget {
     }
 
     return '$minutes:$seconds';
+  }
+}
+
+class _MicPulseOrb extends StatelessWidget {
+  const _MicPulseOrb({
+    required this.isRecording,
+    required this.pulse,
+    required this.onTap,
+  });
+
+  final bool isRecording;
+  final AnimationController pulse;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 220,
+        height: 220,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (isRecording) _PulseWave(animation: pulse, delay: 0.0),
+            if (isRecording) _PulseWave(animation: pulse, delay: 0.35),
+            if (isRecording) _PulseWave(animation: pulse, delay: 0.7),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: isRecording ? 138 : 124,
+              height: isRecording ? 138 : 124,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: isRecording
+                    ? const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFA4D4D), Color(0xFFE31A1A)],
+                      )
+                    : const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFF2F2F2), Color(0xFFD9D9D9)],
+                      ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isRecording
+                        ? const Color(0x66FF3B3B)
+                        : const Color(0x33F2F2F2),
+                    blurRadius: isRecording ? 28 : 16,
+                    spreadRadius: isRecording ? 2 : 0,
+                  ),
+                ],
+              ),
+              child: Icon(
+                isRecording ? Icons.mic : Icons.mic_none_rounded,
+                size: 46,
+                color: isRecording ? const Color(0xFFFDFDFD) : Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PulseWave extends StatelessWidget {
+  const _PulseWave({required this.animation, required this.delay});
+
+  final Animation<double> animation;
+  final double delay;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final progress = _progressWithDelay(animation.value, delay);
+        final opacity = (1 - progress).clamp(0.0, 1.0) * 0.35;
+        final size = 138 + (progress * 88);
+
+        return IgnorePointer(
+          child: Opacity(
+            opacity: opacity,
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFFF5555), width: 2),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  double _progressWithDelay(double value, double delay) {
+    final shifted = value + delay;
+    return shifted >= 1 ? shifted - 1 : shifted;
   }
 }

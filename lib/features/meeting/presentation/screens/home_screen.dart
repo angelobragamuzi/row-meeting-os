@@ -36,92 +36,112 @@ class _HomeScreenState extends State<HomeScreen> {
     context.read<MeetingBloc>().add(const MeetingsRequested());
   }
 
+  Future<void> _deleteMeetingWithConfirm(String meetingId) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Excluir reuni\u00E3o?'),
+          content: const Text(
+            'Esta a\u00E7\u00E3o remove a reuni\u00E3o salva localmente.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true && mounted) {
+      context.read<MeetingBloc>().add(MeetingDeleted(meetingId));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ROW')),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _openRecording,
-            icon: const Icon(Icons.mic),
-            label: const Text('NOVA REUNIAO'),
-          ),
-        ),
+      appBar: AppBar(titleSpacing: 18, title: const Text('ROW')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openRecording,
+        icon: const Icon(Icons.mic_rounded),
+        label: const Text('Nova reuni\u00E3o'),
       ),
-      body: Container(
-        color: const Color(0xFF0A0A0A),
-        child: SafeArea(
-          child: Column(
+      body: BlocConsumer<MeetingBloc, MeetingState>(
+        listener: (context, state) {
+          if (state is MeetingError) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(content: Text(state.message)));
+          }
+        },
+        builder: (context, state) {
+          if (state is MeetingInitial) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final meetings = state.meetings;
+
+          if (meetings.isEmpty) {
+            return _EmptyState(onPressed: _openRecording);
+          }
+
+          return Column(
             children: [
-              Container(
-                width: double.infinity,
+              Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Color(0xFF2B2B2B), width: 2),
-                  ),
-                ),
-                child: Text(
-                  'RECORD  ORGANIZE  WORK',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    letterSpacing: 1.2,
-                    color: const Color(0xFF9A9A9A),
-                  ),
+                child: Row(
+                  children: [
+                    Text(
+                      'Reuni\u00F5es',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${meetings.length}',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: const Color(0xFFADB2BF),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              const Divider(height: 1, thickness: 1, color: Color(0xFF24262B)),
               Expanded(
-                child: BlocConsumer<MeetingBloc, MeetingState>(
-                  listener: (context, state) {
-                    if (state is MeetingError) {
-                      ScaffoldMessenger.of(context)
-                        ..hideCurrentSnackBar()
-                        ..showSnackBar(SnackBar(content: Text(state.message)));
-                    }
-                  },
-                  builder: (context, state) {
-                    if (state is MeetingInitial) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final meetings = state.meetings;
-
-                    if (meetings.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: _EmptyState(onPressed: _openRecording),
-                        ),
-                      );
-                    }
-
-                    return ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      itemCount: meetings.length,
-                      separatorBuilder: (_, index) =>
-                          const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final meeting = meetings[index];
-                        return MeetingCard(
-                          meeting: meeting,
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => ResultScreen(meeting: meeting),
-                              ),
-                            );
-                          },
+                child: ListView.separated(
+                  itemCount: meetings.length,
+                  separatorBuilder: (context, index) => const Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Color(0xFF1F2127),
+                  ),
+                  itemBuilder: (context, index) {
+                    final meeting = meetings[index];
+                    return MeetingCard(
+                      meeting: meeting,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => ResultScreen(meeting: meeting),
+                          ),
                         );
                       },
+                      onDelete: () => _deleteMeetingWithConfirm(meeting.id),
                     );
                   },
                 ),
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -134,38 +154,32 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Color(0xFF141414),
-        border: Border.fromBorderSide(
-          BorderSide(color: Color(0xFF2B2B2B), width: 2),
-        ),
-      ),
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.forum, size: 48),
-            const SizedBox(height: 16),
             Text(
-              'Nenhuma reuniao registrada',
-              style: Theme.of(context).textTheme.titleLarge,
+              'Nenhuma reuni\u00E3o registrada',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Grave e processe uma reuniao para visualizar a descricao estruturada.',
+              'Toque em "Nova reuni\u00E3o" para come\u00E7ar.',
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.copyWith(color: const Color(0xFFBEBEBE)),
+              ).textTheme.bodyMedium?.copyWith(color: const Color(0xFFA1A6B2)),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
+            const SizedBox(height: 18),
+            OutlinedButton.icon(
               onPressed: onPressed,
-              icon: const Icon(Icons.mic),
-              label: const Text('INICIAR'),
+              icon: const Icon(Icons.mic_rounded),
+              label: const Text('Nova reuni\u00E3o'),
             ),
           ],
         ),

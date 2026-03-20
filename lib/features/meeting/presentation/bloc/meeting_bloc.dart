@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../domain/entities/meeting.dart';
 import '../../domain/usecases/get_meetings.dart';
+import '../../domain/usecases/delete_meeting.dart';
 import '../../domain/usecases/save_meeting.dart';
 import '../../domain/usecases/start_recording.dart';
 import '../../domain/usecases/stop_recording.dart';
@@ -21,12 +22,14 @@ class MeetingBloc extends Bloc<MeetingEvent, MeetingState> {
     required TranscribeMeeting transcribeMeeting,
     required SummarizeMeeting summarizeMeeting,
     required SaveMeeting saveMeeting,
+    required DeleteMeeting deleteMeeting,
   }) : _getMeetings = getMeetings,
        _startRecording = startRecording,
        _stopRecording = stopRecording,
        _transcribeMeeting = transcribeMeeting,
        _summarizeMeeting = summarizeMeeting,
        _saveMeeting = saveMeeting,
+       _deleteMeeting = deleteMeeting,
        super(const MeetingInitial()) {
     on<MeetingsRequested>(_onMeetingsRequested);
     on<RecordingStarted>(_onRecordingStarted);
@@ -34,6 +37,7 @@ class MeetingBloc extends Bloc<MeetingEvent, MeetingState> {
     on<RecordingTicked>(_onRecordingTicked);
     on<MeetingFinalized>(_onMeetingFinalized);
     on<MeetingSelectionCleared>(_onMeetingSelectionCleared);
+    on<MeetingDeleted>(_onMeetingDeleted);
   }
 
   final GetMeetings _getMeetings;
@@ -42,6 +46,7 @@ class MeetingBloc extends Bloc<MeetingEvent, MeetingState> {
   final TranscribeMeeting _transcribeMeeting;
   final SummarizeMeeting _summarizeMeeting;
   final SaveMeeting _saveMeeting;
+  final DeleteMeeting _deleteMeeting;
 
   Timer? _timer;
   String? _recordingPath;
@@ -186,6 +191,21 @@ class MeetingBloc extends Bloc<MeetingEvent, MeetingState> {
     Emitter<MeetingState> emit,
   ) {
     emit(MeetingLoaded(meetings: _cachedMeetings));
+  }
+
+  Future<void> _onMeetingDeleted(
+    MeetingDeleted event,
+    Emitter<MeetingState> emit,
+  ) async {
+    try {
+      await _deleteMeeting(event.meetingId);
+      _cachedMeetings = _cachedMeetings
+          .where((meeting) => meeting.id != event.meetingId)
+          .toList();
+      emit(MeetingLoaded(meetings: _cachedMeetings));
+    } catch (error) {
+      emit(MeetingError(message: _mapError(error), meetings: _cachedMeetings));
+    }
   }
 
   void _startTimer() {

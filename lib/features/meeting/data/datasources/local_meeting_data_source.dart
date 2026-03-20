@@ -35,4 +35,8 @@ class LocalMeetingDataSource {
   Future<void> saveMeeting(MeetingModel meeting) async {
     await _safeBox.put(meeting.id, meeting.toMap());
   }
+
+  Future<void> deleteMeeting(String meetingId) async {
+    await _safeBox.delete(meetingId);
+  }
 }

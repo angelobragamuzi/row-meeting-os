@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -8,6 +9,7 @@ import '../../features/meeting/data/repositories/meeting_repository_impl.dart';
 import '../../features/meeting/data/services/gemini_service.dart';
 import '../../features/meeting/data/services/gemini_transcription_service.dart';
 import '../../features/meeting/domain/repositories/meeting_repository.dart';
+import '../../features/meeting/domain/usecases/delete_meeting.dart';
 import '../../features/meeting/domain/usecases/get_meetings.dart';
 import '../../features/meeting/domain/usecases/save_meeting.dart';
 import '../../features/meeting/domain/usecases/start_recording.dart';
@@ -31,8 +33,13 @@ class AppDependencies {
     required String geminiApiKey,
     required String geminiModel,
   }) async {
-    final appDir = await getApplicationDocumentsDirectory();
-    Hive.init('${appDir.path}/row_hive');
+    if (kIsWeb) {
+      // No browser o Hive usa IndexedDB e nao precisa de diretorio local.
+      Hive.init(null);
+    } else {
+      final appDir = await getApplicationDocumentsDirectory();
+      Hive.init('${appDir.path}/row_hive');
+    }
 
     final localMeetingDataSource = LocalMeetingDataSource();
     await localMeetingDataSource.init();
@@ -61,6 +68,7 @@ class AppDependencies {
       transcribeMeeting: TranscribeMeeting(meetingRepository),
       summarizeMeeting: SummarizeMeeting(meetingRepository),
       saveMeeting: SaveMeeting(meetingRepository),
+      deleteMeeting: DeleteMeeting(meetingRepository),
     );
 
     return AppDependencies._(

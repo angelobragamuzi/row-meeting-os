@@ -42,6 +42,7 @@ class AppTheme {
         color: _gray900,
         elevation: 0,
         shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.zero,
           side: BorderSide(color: _gray700, width: 2),
         ),
       ),
@@ -49,6 +50,7 @@ class AppTheme {
         backgroundColor: _white,
         foregroundColor: _black,
         shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.zero,
           side: BorderSide(color: _gray700, width: 2),
         ),
       ),
@@ -60,6 +62,7 @@ class AppTheme {
           color: _white,
         ),
         shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.zero,
           side: BorderSide(color: _gray700, width: 2),
         ),
       ),
@@ -73,7 +76,7 @@ class AppTheme {
             letterSpacing: 0.2,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          shape: const RoundedRectangleBorder(),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -86,7 +89,7 @@ class AppTheme {
           ),
           side: const BorderSide(color: _gray400, width: 2),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          shape: const RoundedRectangleBorder(),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         ),
       ),
       textTheme: const TextTheme(

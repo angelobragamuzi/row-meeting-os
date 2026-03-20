@@ -60,5 +60,10 @@ class MeetingRepositoryImpl implements MeetingRepository {
   }
 
   @override
+  Future<void> deleteMeeting(String meetingId) {
+    return _localMeetingDataSource.deleteMeeting(meetingId);
+  }
+
+  @override
   Future<void> dispose() => _audioRecorderDataSource.dispose();
 }

@@ -8,7 +8,7 @@ import 'core/di/app_dependencies.dart';
 import 'core/theme/app_theme.dart';
 import 'features/meeting/presentation/bloc/meeting_bloc.dart';
 import 'features/meeting/presentation/bloc/meeting_event.dart';
-import 'features/meeting/presentation/screens/home_screen.dart';
+import 'features/splash/presentation/screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,7 +80,7 @@ class _RowAppState extends State<RowApp> {
         theme: AppTheme.darkTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.dark,
-        home: const HomeScreen(),
+        home: const SplashScreen(),
       ),
     );
   }

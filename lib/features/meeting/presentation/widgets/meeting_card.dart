@@ -4,68 +4,76 @@ import 'package:intl/intl.dart';
 import '../../domain/entities/meeting.dart';
 
 class MeetingCard extends StatelessWidget {
-  const MeetingCard({super.key, required this.meeting, required this.onTap});
+  const MeetingCard({
+    super.key,
+    required this.meeting,
+    required this.onTap,
+    required this.onDelete,
+  });
 
   final Meeting meeting;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final formattedDate = DateFormat(
       'dd/MM/yyyy HH:mm',
     ).format(meeting.createdAt);
-    final source = (meeting.summary['fonte'] ?? 'indefinido').toString();
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: const BoxDecoration(
-            color: Color(0xFF141414),
-            border: Border.fromBorderSide(
-              BorderSide(color: Color(0xFF2B2B2B), width: 2),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'REUNIAO  $formattedDate',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: const Color(0xFF9A9A9A),
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Divider(height: 1, thickness: 1, color: Color(0xFF2B2B2B)),
-              const SizedBox(height: 8),
-              Text(
-                meeting.context.isEmpty
-                    ? 'Sem descricao disponivel.'
-                    : meeting.context,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              Row(
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'FONTE: $source',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelSmall?.copyWith(letterSpacing: 0.8),
+                    formattedDate,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: const Color(0xFFA3A9B6),
+                      letterSpacing: 0.1,
+                    ),
                   ),
-                  const Spacer(),
-                  const Icon(Icons.arrow_forward, size: 16),
+                  const SizedBox(height: 6),
+                  Text(
+                    meeting.context.isEmpty
+                        ? 'Descri\u00E7\u00E3o indispon\u00EDvel para esta reuni\u00E3o.'
+                        : meeting.context,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.26,
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+            PopupMenuButton<_MeetingMenuAction>(
+              icon: const Icon(Icons.more_horiz_rounded),
+              tooltip: 'A\u00E7\u00F5es da reuni\u00E3o',
+              onSelected: (value) {
+                if (value == _MeetingMenuAction.delete) {
+                  onDelete();
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem<_MeetingMenuAction>(
+                  value: _MeetingMenuAction.delete,
+                  child: Text('Excluir reuni\u00E3o'),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
+
+enum _MeetingMenuAction { delete }
