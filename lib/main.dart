@@ -6,6 +6,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/di/app_dependencies.dart';
 import 'core/theme/app_theme.dart';
+import 'features/meeting/domain/usecases/export_summary_assistant_pdf.dart';
+import 'features/meeting/domain/usecases/generate_summary_assistant_content.dart';
+import 'features/meeting/domain/usecases/update_meeting_summary.dart';
 import 'features/meeting/presentation/bloc/meeting_bloc.dart';
 import 'features/meeting/presentation/bloc/meeting_event.dart';
 import 'features/splash/presentation/screens/splash_screen.dart';
@@ -72,15 +75,28 @@ class _RowAppState extends State<RowApp> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<MeetingBloc>.value(
-      value: widget.dependencies.meetingBloc..add(const MeetingsRequested()),
-      child: MaterialApp(
-        title: 'ROW',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.dark,
-        home: const SplashScreen(),
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<GenerateSummaryAssistantContent>.value(
+          value: widget.dependencies.generateSummaryAssistantContent,
+        ),
+        RepositoryProvider<ExportSummaryAssistantPdf>.value(
+          value: widget.dependencies.exportSummaryAssistantPdf,
+        ),
+        RepositoryProvider<UpdateMeetingSummary>.value(
+          value: widget.dependencies.updateMeetingSummary,
+        ),
+      ],
+      child: BlocProvider<MeetingBloc>.value(
+        value: widget.dependencies.meetingBloc..add(const MeetingsRequested()),
+        child: MaterialApp(
+          title: 'ROW',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.darkTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeMode.dark,
+          home: const SplashScreen(),
+        ),
       ),
     );
   }
